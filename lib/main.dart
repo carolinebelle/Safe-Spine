@@ -8,8 +8,17 @@ import 'package:safespine/services/lifecycle.dart';
 import 'package:safespine/shared/loading.dart';
 import 'package:safespine/theme.dart';
 
-void main() {
+import 'dart:async';
+import 'package:get_it/get_it.dart';
+
+import 'package:safespine/services/database_helper.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  GetIt.I.registerSingleton<DatabaseHelper>(DatabaseHelper());
+  await GetIt.instance<DatabaseHelper>().init();
+
   runApp(const App());
 }
 

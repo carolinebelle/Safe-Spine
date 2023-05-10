@@ -28,6 +28,82 @@ class Form {
       this.title = '',
       this.user = ''})
       : answers = answers ?? {};
+
+  static Form fromMap(Map<String, dynamic> map) {
+    final Timestamp? dateCompleted;
+    if (map['dateCompleted'] == null) {
+      dateCompleted = null;
+    } else {
+      dateCompleted =
+          Timestamp.fromMicrosecondsSinceEpoch(map['dateCompleted']);
+    }
+
+    final Timestamp? dateStarted;
+    if (map['dateStarted'] == null) {
+      dateStarted = null;
+    } else {
+      dateStarted = Timestamp.fromMicrosecondsSinceEpoch(map['dateStarted']);
+    }
+
+    final Timestamp? dateReceived;
+    if (map['dateReceived'] == null) {
+      dateReceived = null;
+    } else {
+      dateReceived = Timestamp.fromMicrosecondsSinceEpoch(map['dateReceived']);
+    }
+
+    return Form(
+        id: map['id'],
+        dateCompleted: dateCompleted,
+        dateReceived: dateReceived,
+        dateStarted: dateStarted,
+        form_type: map['form_type'],
+        hospital: map['hospital'],
+        title: map['title'],
+        user: map['user']);
+  }
+
+  List<Map<String, String>> answersToMap() {
+    final List<Map<String, String>> list = [];
+
+    answers.forEach((key, value) {
+      final Map<String, String> map = {
+        'formID': id,
+        'questionID': key,
+        'response': value
+      };
+      list.add(map);
+    });
+
+    return list;
+  }
+
+  Map<String, dynamic> metadataToMap() {
+    final Map<String, dynamic> map = {
+      'id': id,
+      'form_type': form_type,
+      'hospital': hospital,
+      'title': title,
+      'user': user
+    };
+
+    if (dateStarted != null) {
+      map['dateStarted'] = dateStarted?.microsecondsSinceEpoch;
+    }
+    if (dateCompleted != null) {
+      map['dateCompleted'] = dateCompleted?.microsecondsSinceEpoch;
+    }
+    if (dateReceived != null) {
+      map['dateReceived'] = dateReceived?.microsecondsSinceEpoch;
+    }
+
+    return map;
+  }
+
+  @override
+  String toString() {
+    return 'Form{id: $id, user: $user, hospital: $hospital, dateStarted: $dateStarted, dateCompleted: $dateCompleted, answers: n = ${answers.length}}';
+  }
 }
 
 @JsonSerializable()

@@ -42,29 +42,42 @@ class _FormsScreenState extends State<FormsScreen> {
                   onTap: () {
                     Navigator.pushNamed(
                       context,
-                      '/csv',
+                      '/addHospital',
                     );
                   },
                   child: const Icon(
-                    Icons.document_scanner,
+                    Icons.local_hospital,
                     size: 26.0,
                   ),
                 ),
-                // TODO: remove
-                // child: GestureDetector(
-                //   onTap: () {
-                //     Navigator.pushNamed(
-                //       context,
-                //       '/addHospital',
-                //     );
-                //   },
-                //   child: const Icon(
-                //     Icons.local_hospital,
-                //     size: 26.0,
-                //   ),
-                // ),
               ),
               actions: [
+                // Modify Questions Sheet
+                Padding(
+                  padding: const EdgeInsets.only(right: 20.0),
+                  child: GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/modifyQuestions',
+                        );
+                      },
+                      child: const Icon(Icons.book)),
+                ),
+                Padding(
+                    padding: const EdgeInsets.only(right: 20.0),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context,
+                          '/csv',
+                        );
+                      },
+                      child: const Icon(
+                        Icons.document_scanner,
+                        size: 26.0,
+                      ),
+                    )),
                 if (!Provider.of<bool>(context))
                   Padding(
                     padding: const EdgeInsets.only(right: 20.0),
@@ -76,15 +89,6 @@ class _FormsScreenState extends State<FormsScreen> {
                       ),
                     ),
                   ),
-                // Modify Questions Sheet
-                // GestureDetector(
-                //     onTap: () {
-                //       Navigator.pushNamed(
-                //         context,
-                //         '/modifyQuestions',
-                //       );
-                //     },
-                //     child: const Icon(Icons.book))
               ],
             ),
             body: Column(
