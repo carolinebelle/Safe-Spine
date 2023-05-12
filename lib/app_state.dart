@@ -3,17 +3,28 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:safespine/services/auth.dart';
 import 'package:safespine/services/firestore.dart';
-import 'package:safespine/services/models.dart' as m;
+import 'package:safespine/services/models.dart' as model;
 
 class AppState with ChangeNotifier {
-  final FirestoreService _service = FirestoreService();
+  static AppState? _instance;
+  final FirestoreService service;
   final AuthService _auth = AuthService();
 
-  List<m.FormType> formats = [];
-  Map<String, m.Section> sections = {};
-  Map<String, m.Question> questions = {};
-  List<m.Hospital> hospitals = [];
-  List<m.Form> userForms = [];
+  static Future<AppState> getInstance() async {
+    if (_instance == null) {
+      final firestoreService = await FirestoreService.getInstance();
+      _instance = AppState._(firestoreService);
+    }
+    return _instance!;
+  }
+
+  AppState._(this.service);
+
+  List<model.FormType> formats = [];
+  Map<String, model.Section> sections = {};
+  Map<String, model.Question> questions = {};
+  List<model.Hospital> hospitals = [];
+  List<model.Form> userForms = [];
 
   bool isLoading = true;
 
@@ -23,22 +34,22 @@ class AppState with ChangeNotifier {
     print("Retrieving from firebase to state");
 
     if (AuthService().user != null) {
-      formats = await _service.getFormTypes();
+      formats = await service.getFormTypes();
       print("Retrieved formats");
 
       if (formats.isNotEmpty) {
         sections = {
-          for (var v in await _service.getSections(formats.first.id)) v.id: v
+          for (var v in await service.getSections(formats.first.id)) v.id: v
         };
         print("Retrieved sections");
-        questions = {for (var v in await _service.getQuestions()) v.id: v};
+        questions = {for (var v in await service.getQuestions()) v.id: v};
         print("Retrieved questions");
       }
-      hospitals = await _service.getHospitals();
+      hospitals = await service.getHospitals();
       print("Retrieved hospitals");
 
       if (_auth.user != null) {
-        userForms = await _service.getForms(userId: _auth.user?.uid);
+        userForms = await service.getForms(userId: _auth.user?.uid);
         print("Retrieved userforms");
       }
 
@@ -50,29 +61,29 @@ class AppState with ChangeNotifier {
     }
   }
 
-  Future<void> updateForm(m.Form form) {
-    return _service.updateForm(form);
+  Future<void> updateForm(model.Form form) {
+    return service.updateForm(form);
   }
 
-  Future<void> submitForm(m.Form form) {
-    return _service.submitForm(form);
+  Future<void> submitForm(model.Form form) {
+    return service.submitForm(form);
   }
 
   Future<void> addHospital(String hospitalName) async {
-    await _service.createHospital(hospitalName);
-    hospitals = await _service.getHospitals();
+    await service.createHospital(hospitalName);
+    hospitals = await service.getHospitals();
     notifyListeners();
     return;
   }
 
   //modify questions
   Future<void> modifyQuestion(String id, String newText) {
-    return _service.updateQuestion(id, newText);
+    return service.updateQuestion(id, newText);
   }
 
   Future<void> csv() async {
-    await _service.generateSpecificCSV();
-    // await _service.generateCSV();
+    await service.generateSpecificCSV();
+    // await service.generateCSV();
     notifyListeners();
     return;
   }

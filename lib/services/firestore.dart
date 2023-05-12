@@ -5,12 +5,53 @@ import 'package:safespine/services/auth.dart';
 import 'package:safespine/services/models.dart';
 import 'package:csv/csv.dart';
 import 'dart:io';
-import 'package:to_csv/to_csv.dart' as exportCSV;
+// import 'package:to_csv/to_csv.dart' as exportCSV;
 
 import 'package:path_provider/path_provider.dart';
+import 'package:safespine/services/shared_preferences_provider.dart';
+
+enum Collection {
+  hospitals(path: "hospitals"),
+  questions(path: "questions"),
+  forms(path: "forms"),
+  users(path: "users"),
+  formTypes(path: "form_types");
+
+  const Collection({
+    required this.path,
+  });
+
+  final String path;
+
+  CollectionReference<Map<String, dynamic>> ref(FirebaseFirestore db) =>
+      db.collection(path);
+}
 
 class FirestoreService {
+  static FirestoreService? _instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final Source CACHE = Source.cache;
+  final Source SERVER = Source.server;
+  final SharedPreferencesProvider _sharedPreferencesProvider;
+
+  static Future<FirestoreService> getInstance() async {
+    if (_instance == null) {
+      final provider = await SharedPreferencesProvider.getInstance();
+      _instance = FirestoreService._(provider);
+    }
+    return _instance!;
+  }
+
+  FirestoreService._(SharedPreferencesProvider provider)
+      : _sharedPreferencesProvider = provider;
+
+  Timestamp? _getLastSync() {
+    return _sharedPreferencesProvider.getSyncDate();
+  }
+
+  void _setLastSync(Timestamp timestamp) {
+    _sharedPreferencesProvider.setSyncDate(timestamp);
+  }
 
   Form formFromFirebase(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
     var data = doc.data();
@@ -26,23 +67,77 @@ class FirestoreService {
         user: data["user"] as String? ?? "");
   }
 
+  void _addField(DocumentReference<Map<String, dynamic>> docRef,
+      String fieldName, dynamic fieldValue) {
+    var data = {fieldName: fieldValue};
+
+    docRef.set(data, SetOptions(merge: true));
+  }
+
+  //TODO: Only once
+  void addLastModifiedFieldNow() async {
+    final now = Timestamp.now();
+
+    void addLastModified(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+      _addField(doc.reference, "lastModified", now);
+    }
+
+    final questionsRef = Collection.questions.ref(_db);
+    final questionsSnapshot = await questionsRef.get();
+    for (final doc in questionsSnapshot.docs) {
+      addLastModified(doc);
+    }
+
+    final hospitalsRef = Collection.hospitals.ref(_db);
+    final hospitalsSnapshot = await hospitalsRef.get();
+    for (final doc in hospitalsSnapshot.docs) {
+      addLastModified(doc);
+    }
+
+    final formatRef = Collection.formTypes.ref(_db);
+    final formatSnapshot = await formatRef.get();
+
+    for (final doc in formatSnapshot.docs) {
+      final sectionRef = doc.reference.collection("Sections");
+      final sectionSnapshot = await sectionRef.get();
+
+      for (final sectionDoc in sectionSnapshot.docs) {
+        addLastModified(sectionDoc);
+      }
+      addLastModified(doc);
+    }
+
+    _setLastSync(now);
+  }
+
+  Query<Map<String, dynamic>> filterByModified(
+      CollectionReference<Map<String, dynamic>> ref) {
+    final Timestamp lastSync = _sharedPreferencesProvider.getSyncDate();
+    return ref.where("lastModified", isGreaterThan: lastSync);
+  }
+
   Future<List<FormType>> getFormTypes() async {
-    var ref = _db.collection('form_types');
-    var snapshot = await ref.get();
+    final ref = Collection.formTypes.ref(_db);
+    final query = filterByModified(ref);
+    final snapshot = await query.get();
     var formTypes = snapshot.docs.map((s) => FormType.fromJson(s.id, s.data()));
     return formTypes.toList();
   }
 
   Future<List<Section>> getSections(formType) async {
     var ref = _db.collection('form_types/$formType/Sections');
-    var snapshot = await ref.get();
+    final query = filterByModified(ref);
+    final snapshot = await query.get();
     var sections = snapshot.docs.map((s) => Section.fromJson(s.id, s.data()));
     return sections.toList();
   }
 
   Future<List<Question>> getQuestions() async {
-    var ref = _db.collection('questions');
-    var snapshot = await ref.get();
+    var ref = Collection.questions.ref(_db);
+
+    final query = filterByModified(ref);
+    final snapshot = await query.get();
+
     Iterable<Question> questions = snapshot.docs.map((s) {
       if (s.data()["type"] == "binary") {
         return BinaryQuestion.fromJson(s.id, s.data());
@@ -54,42 +149,39 @@ class FirestoreService {
   }
 
   Future<List<Form>> getForms({hospitalId, userId}) async {
-    var ref = _db.collection('forms').orderBy("dateStarted");
+    final ref = Collection.forms.ref(_db);
+    var query = filterByModified(ref).orderBy("dateStarted");
     if (hospitalId != null) {
-      ref = ref.where("hospital", isEqualTo: hospitalId);
+      query = query.where("hospital", isEqualTo: hospitalId);
     }
     if (userId != null) {
-      ref = ref.where("user", isEqualTo: userId);
+      query = query.where("user", isEqualTo: userId);
     }
-    var snapshot = await ref.get();
-    var forms = snapshot.docs.map((s) => formFromFirebase(s));
+
+    final snapshot = await query.get();
+    final forms = snapshot.docs.map((s) => formFromFirebase(s));
     return forms.toList();
   }
 
   Future<List<User>> getUserList() async {
-    var ref = _db.collection('users');
-    var snapshot = await ref.get();
-    var users = snapshot.docs.map((s) => User.fromJson(s.id, s.data()));
+    final ref = Collection.users.ref(_db);
+    final query = filterByModified(ref);
+    final snapshot = await query.get();
+    final users = snapshot.docs.map((s) => User.fromJson(s.id, s.data()));
     return users.toList();
   }
 
   Future<List<Hospital>> getHospitals() async {
-    var ref = _db.collection('hospitals');
-    var snapshot = await ref.get();
+    var ref = Collection.hospitals.ref(_db);
+    final query = filterByModified(ref);
+    final snapshot = await query.get();
     var hospitals = snapshot.docs.map((s) => Hospital.fromJson(s.id, s.data()));
     return hospitals.toList();
   }
 
-  /// Retrieves a single section document
-  Future<Section> getSection(String formId, String sectionId) async {
-    var ref = _db.collection('quizzes/$formId/Sections').doc(sectionId);
-    var snapshot = await ref.get();
-    return Section.fromJson(snapshot.id, snapshot.data() ?? {});
-  }
-
   /// Retrieves a single question document
   Future<Question> getQuestion(String questionId) async {
-    var ref = _db.collection('questions').doc(questionId);
+    var ref = Collection.questions.ref(_db).doc(questionId);
     var snapshot = await ref.get();
     if (snapshot.data()?["type"] == "binary") {
       return BinaryQuestion.fromJson(snapshot.id, snapshot.data() ?? {});
@@ -99,24 +191,22 @@ class FirestoreService {
   }
 
   Future<void> updateQuestion(String questionId, String newInfo) async {
-    var ref = _db.collection('questions').doc(questionId);
+    var ref = Collection.questions.ref(_db).doc(questionId);
 
-    var data = {
-      'info': newInfo,
-    };
+    var data = {'info': newInfo, 'lastModified': Timestamp.now()};
 
     return ref.set(data, SetOptions(merge: true));
   }
 
   /// Retrieves a single user document
   Future<User> getUser(String userId) async {
-    var ref = _db.collection('users').doc(userId);
+    var ref = Collection.users.ref(_db).doc(userId);
     var snapshot = await ref.get();
     return User.fromJson(snapshot.id, snapshot.data() ?? {});
   }
 
   Stream<List<FormType>> streamFormTypes() {
-    var ref = _db.collection('form_types');
+    var ref = Collection.formTypes.ref(_db);
     return ref.snapshots().map((querySnap) => querySnap.docs
         .map((doc) => FormType.fromJson(doc.id, doc.data()))
         .toList());
@@ -137,7 +227,7 @@ class FirestoreService {
   //   return AuthService().userStream.switchMap((user) {
   //     if (user != null) {
   //       print("user is not null");
-  //       var ref = _db.collection('forms').where("user", isEqualTo: user.uid);
+  //       var ref = Collection.forms.ref(_db).where("user", isEqualTo: user.uid);
   //       return ref.snapshots().map((querySnap) => querySnap.docs
   //           .map((doc) => Form.fromJson(doc.id, doc.data()))
   //           .toList());
@@ -149,7 +239,7 @@ class FirestoreService {
   // }
 
   String createForm(Form form) {
-    var ref = _db.collection('forms').doc();
+    var ref = Collection.forms.ref(_db).doc();
 
     var data = {
       'dateStarted': Timestamp.now(),
@@ -157,6 +247,7 @@ class FirestoreService {
       'hospital': form.hospital,
       'title': form.title,
       'user': AuthService().user?.uid ?? "",
+      'lastModified': Timestamp.now(),
     };
 
     ref.set(data);
@@ -165,7 +256,7 @@ class FirestoreService {
   }
 
   Future<void> updateForm(Form form) {
-    var ref = _db.collection('forms').doc(form.id);
+    var ref = Collection.forms.ref(_db).doc(form.id);
 
     var data = {
       'dateStarted': form.dateStarted,
@@ -174,13 +265,14 @@ class FirestoreService {
       'title': form.title,
       'user': AuthService().user?.uid ?? "",
       'answers': form.answers,
+      'lastModified': Timestamp.now()
     };
 
     return ref.set(data, SetOptions(merge: true));
   }
 
   Future<void> submitForm(Form form) {
-    var ref = _db.collection('forms').doc(form.id);
+    var ref = Collection.forms.ref(_db).doc(form.id);
 
     var data = {
       'dateStarted': form.dateStarted,
@@ -191,6 +283,7 @@ class FirestoreService {
       'answers': form.answers,
       'dateCompleted': Timestamp.now(),
       'dateReceived': FieldValue.serverTimestamp(),
+      'lastModified': Timestamp.now()
     };
 
     return ref.set(data, SetOptions(merge: true));
@@ -199,13 +292,13 @@ class FirestoreService {
   void createUser(User userDoc) {
     var user = AuthService().user;
     if (user != null) {
-      var ref = _db.collection('users').doc(user.uid);
+      var ref = Collection.users.ref(_db).doc(user.uid);
       ref.set(userDoc.toJson());
     }
   }
 
   Future<void> modifyAdmin(User userDoc, bool admin) {
-    var ref = _db.collection('users').doc(userDoc.id);
+    var ref = Collection.users.ref(_db).doc(userDoc.id);
 
     var data = {'admin': admin};
 
@@ -213,9 +306,9 @@ class FirestoreService {
   }
 
   Future<void> createHospital(String hospitalName) {
-    var ref = _db.collection('hospitals').doc();
+    var ref = Collection.hospitals.ref(_db).doc();
 
-    var data = {'name': hospitalName};
+    var data = {'name': hospitalName, 'lastModified': Timestamp.now()};
 
     return ref.set(data);
   }
@@ -417,12 +510,6 @@ class FirestoreService {
 
         print("survey ${survey.sections.length}");
 
-        // for (var s = 0; s < survey.sections.length; s++) {
-        //   print(survey.sections[s]);
-        //   Section currentSection =
-        //       await getSection(form.form_type, survey.sections[s]);
-
-        //   print(currentSection.questions.length);
         List<String> stack = [
           "KPfFgaHW6aAtSR9IkssC",
           "baMX3K0NPh0IUg17zQ3O",

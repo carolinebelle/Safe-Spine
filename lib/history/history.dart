@@ -12,7 +12,8 @@ class HistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context, [bool mounted = true]) {
-    var userForms = Provider.of<AppState>(context).userForms;
+    final appState = Provider.of<AppState>(context);
+    final FirestoreService service = appState.service;
 
     return Scaffold(
       appBar: AppBar(
@@ -38,7 +39,7 @@ class HistoryScreen extends StatelessWidget {
         ],
       ),
       body: StreamBuilder<List<m.Form>>(
-          stream: FirestoreService().streamForms(),
+          stream: service.streamForms(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const LoadingScreen();

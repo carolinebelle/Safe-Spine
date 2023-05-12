@@ -4,6 +4,7 @@ import 'package:safespine/services/firestore.dart';
 import 'package:safespine/shared/loading.dart';
 import 'package:safespine/survey/survey_state.dart';
 import 'package:safespine/shared/progress.dart';
+import 'package:safespine/app_state.dart';
 
 class CompletePage extends StatefulWidget {
   final int sectionIndex;
@@ -19,12 +20,14 @@ class _CompletePageState extends State<CompletePage> {
   @override
   Widget build(BuildContext context) {
     var state = Provider.of<SurveyState>(context);
+    final appState = Provider.of<AppState>(context);
+    final FirestoreService service = appState.service;
 
     void submitForm(BuildContext context) async {
       setState(() {
         loading = true;
       });
-      await FirestoreService().submitForm(state.form);
+      await service.submitForm(state.form);
       setState(() {
         loading = false;
         submitted = true;

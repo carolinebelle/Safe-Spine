@@ -15,7 +15,7 @@ class AuthService {
 
   Future<void> createUser(emailAddress, password) async {
     try {
-      final credential = await _auth.createUserWithEmailAndPassword(
+      await _auth.createUserWithEmailAndPassword(
         email: emailAddress,
         password: password,
       );

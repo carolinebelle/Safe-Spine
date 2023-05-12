@@ -16,13 +16,13 @@ class SharedPreferencesProvider {
   SharedPreferencesProvider._(SharedPreferences sharedPreferences)
       : _preferences = sharedPreferences;
 
-  Timestamp? getSyncDate() {
+  Timestamp getSyncDate() {
     final int? microseconds = _preferences.getInt('last_sync');
 
     if (microseconds != null) {
       return Timestamp.fromMicrosecondsSinceEpoch(microseconds);
     } else {
-      return null;
+      return Timestamp.fromMicrosecondsSinceEpoch(0);
     }
   }
 

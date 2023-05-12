@@ -34,7 +34,7 @@
               "client_id": "1062871469674-fdmt01qabv1omm1vbrql1181bu3i2e28.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.ortholink.safespine"
+                "bundle_id": "com.ortholink.safespine.safespine"
               }
             }
           ]
@@ -45,7 +45,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:1062871469674:android:624affab9a5e5b39b28413",
         "android_client_info": {
-          "package_name": "com.ortholink.safespine"
+          "package_name": "com.ortholink.safespine.safespine"
         }
       },
       "oauth_client": [
@@ -70,7 +70,7 @@
               "client_id": "1062871469674-fdmt01qabv1omm1vbrql1181bu3i2e28.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.ortholink.safespine"
+                "bundle_id": "com.ortholink.safespine.safespine"
               }
             }
           ]
@@ -106,7 +106,7 @@
               "client_id": "1062871469674-fdmt01qabv1omm1vbrql1181bu3i2e28.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.ortholink.safespine"
+                "bundle_id": "com.ortholink.safespine.safespine"
               }
             }
           ]

@@ -55,7 +55,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyC3llyaXhfElVPWNAOjYHidbXUS_IdTInw',
-    appId: '1:1062871469674:android:624affab9a5e5b39b28413',
+    appId: '1:1062871469674:android:abf61a26048eac1cb28413',
     messagingSenderId: '1062871469674',
     projectId: 'safespine-6f2ce',
     storageBucket: 'safespine-6f2ce.appspot.com',
@@ -63,23 +63,21 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCVCmx7T0I_PpztEBsV3UGH5wtyDmB6rZc',
-    appId: '1:1062871469674:ios:2c5a24b7e1b836b2b28413',
+    appId: '1:1062871469674:ios:99a10e1c2aea9234b28413',
     messagingSenderId: '1062871469674',
     projectId: 'safespine-6f2ce',
     storageBucket: 'safespine-6f2ce.appspot.com',
-    iosClientId:
-        '1062871469674-fdmt01qabv1omm1vbrql1181bu3i2e28.apps.googleusercontent.com',
+    iosClientId: '1062871469674-sc61hu0gu5hjs9dssfrqdfff54g3dmhu.apps.googleusercontent.com',
     iosBundleId: 'com.ortholink.safespine',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyCVCmx7T0I_PpztEBsV3UGH5wtyDmB6rZc',
-    appId: '1:1062871469674:ios:2c5a24b7e1b836b2b28413',
+    appId: '1:1062871469674:ios:99a10e1c2aea9234b28413',
     messagingSenderId: '1062871469674',
     projectId: 'safespine-6f2ce',
     storageBucket: 'safespine-6f2ce.appspot.com',
-    iosClientId:
-        '1062871469674-fdmt01qabv1omm1vbrql1181bu3i2e28.apps.googleusercontent.com',
+    iosClientId: '1062871469674-sc61hu0gu5hjs9dssfrqdfff54g3dmhu.apps.googleusercontent.com',
     iosBundleId: 'com.ortholink.safespine',
   );
 }

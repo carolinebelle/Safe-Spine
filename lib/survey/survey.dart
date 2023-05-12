@@ -103,6 +103,9 @@ class SurveyScreen extends StatelessWidget {
 
     SurveyState state = SurveyState(form: form, format: format);
 
+    final appState = Provider.of<AppState>(context);
+    final FirestoreService service = appState.service;
+
     return WillPopScope(
       onWillPop: () async => !Navigator.of(context).userGestureInProgress,
       child: ChangeNotifierProvider<SurveyState>.value(
@@ -117,7 +120,7 @@ class SurveyScreen extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 20.0),
                   child: GestureDetector(
                     onTap: () {
-                      FirestoreService().updateForm(state.form);
+                      service.updateForm(state.form);
                       Navigator.pop(context);
                       Navigator.pop(context);
                     },

@@ -38,6 +38,7 @@ class _AppState extends State<App> {
   /// The future is part of the state of our widget. We should not call `initializeApp`
   /// directly inside [build].
   final Future<FirebaseApp> _initialization = Firebase.initializeApp();
+  final Future<AppState> _state = AppState.getInstance();
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +56,15 @@ class _AppState extends State<App> {
           return StreamProvider<bool>(
             create: (_) => ConnectivityService().checkConnectivity(),
             initialData: false,
-            child: const WrappedApp(),
+            child: FutureBuilder(
+                future: _state,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return WrappedApp(state: snapshot.data!);
+                  } else {
+                    return const Text("Loading...");
+                  }
+                }),
           );
         }
 
@@ -69,22 +78,21 @@ class _AppState extends State<App> {
 }
 
 class WrappedApp extends StatefulWidget {
-  const WrappedApp({super.key});
+  final AppState state;
+  const WrappedApp({super.key, required this.state});
 
   @override
   State<WrappedApp> createState() => _WrappedAppState();
 }
 
 class _WrappedAppState extends State<WrappedApp> {
-  final AppState _state = AppState();
-
   @override
   void initState() {
     WidgetsBinding.instance.addObserver(LifecycleEventHandler(
         resumeCallBack: () async => setState(() {
               if (mounted) {
                 print("main.dart ---------- resumeCallback");
-                _state.refreshFromFirebase();
+                widget.state.refreshFromFirebase();
               }
             })));
 
@@ -94,7 +102,7 @@ class _WrappedAppState extends State<WrappedApp> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<AppState>.value(
-      value: _state,
+      value: widget.state,
       child: MaterialApp(
           debugShowCheckedModeBanner: true, theme: appTheme, routes: appRoutes),
     );
