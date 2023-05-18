@@ -53,7 +53,7 @@ class FirestoreService {
     _sharedPreferencesProvider.setSyncDate(timestamp);
   }
 
-  Form formFromFirebase(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+  Form _formFromFirebase(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
     var data = doc.data();
     return Form(
         id: doc.id,
@@ -74,41 +74,40 @@ class FirestoreService {
     docRef.set(data, SetOptions(merge: true));
   }
 
-  //TODO: Only once
-  void addLastModifiedFieldNow() async {
-    final now = Timestamp.now();
+  // void addLastModifiedFieldNow() async {
+  //   final now = Timestamp.now();
 
-    void addLastModified(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-      _addField(doc.reference, "lastModified", now);
-    }
+  //   void addLastModified(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+  //     _addField(doc.reference, "lastModified", now);
+  //   }
 
-    final questionsRef = Collection.questions.ref(_db);
-    final questionsSnapshot = await questionsRef.get();
-    for (final doc in questionsSnapshot.docs) {
-      addLastModified(doc);
-    }
+  //   final questionsRef = Collection.questions.ref(_db);
+  //   final questionsSnapshot = await questionsRef.get();
+  //   for (final doc in questionsSnapshot.docs) {
+  //     addLastModified(doc);
+  //   }
 
-    final hospitalsRef = Collection.hospitals.ref(_db);
-    final hospitalsSnapshot = await hospitalsRef.get();
-    for (final doc in hospitalsSnapshot.docs) {
-      addLastModified(doc);
-    }
+  //   final hospitalsRef = Collection.hospitals.ref(_db);
+  //   final hospitalsSnapshot = await hospitalsRef.get();
+  //   for (final doc in hospitalsSnapshot.docs) {
+  //     addLastModified(doc);
+  //   }
 
-    final formatRef = Collection.formTypes.ref(_db);
-    final formatSnapshot = await formatRef.get();
+  //   final formatRef = Collection.formTypes.ref(_db);
+  //   final formatSnapshot = await formatRef.get();
 
-    for (final doc in formatSnapshot.docs) {
-      final sectionRef = doc.reference.collection("Sections");
-      final sectionSnapshot = await sectionRef.get();
+  //   for (final doc in formatSnapshot.docs) {
+  //     final sectionRef = doc.reference.collection("Sections");
+  //     final sectionSnapshot = await sectionRef.get();
 
-      for (final sectionDoc in sectionSnapshot.docs) {
-        addLastModified(sectionDoc);
-      }
-      addLastModified(doc);
-    }
+  //     for (final sectionDoc in sectionSnapshot.docs) {
+  //       addLastModified(sectionDoc);
+  //     }
+  //     addLastModified(doc);
+  //   }
 
-    _setLastSync(now);
-  }
+  //   _setLastSync(now);
+  // }
 
   Query<Map<String, dynamic>> filterByModified(
       CollectionReference<Map<String, dynamic>> ref) {
@@ -116,6 +115,7 @@ class FirestoreService {
     return ref.where("lastModified", isGreaterThan: lastSync);
   }
 
+//TODO: get from cache and anything >lastmodified
   Future<List<FormType>> getFormTypes() async {
     final ref = Collection.formTypes.ref(_db);
     final query = filterByModified(ref);
@@ -124,6 +124,7 @@ class FirestoreService {
     return formTypes.toList();
   }
 
+//TODO: get from cache and anything >lastmodified
   Future<List<Section>> getSections(formType) async {
     var ref = _db.collection('form_types/$formType/Sections');
     final query = filterByModified(ref);
@@ -132,6 +133,7 @@ class FirestoreService {
     return sections.toList();
   }
 
+//TODO: get from cache and anything >lastmodified
   Future<List<Question>> getQuestions() async {
     var ref = Collection.questions.ref(_db);
 
@@ -150,7 +152,7 @@ class FirestoreService {
 
   Future<List<Form>> getForms({hospitalId, userId}) async {
     final ref = Collection.forms.ref(_db);
-    var query = filterByModified(ref).orderBy("dateStarted");
+    var query = ref.orderBy("dateStarted");
     if (hospitalId != null) {
       query = query.where("hospital", isEqualTo: hospitalId);
     }
@@ -159,35 +161,25 @@ class FirestoreService {
     }
 
     final snapshot = await query.get();
-    final forms = snapshot.docs.map((s) => formFromFirebase(s));
+    final forms = snapshot.docs.map((s) => _formFromFirebase(s));
     return forms.toList();
   }
 
   Future<List<User>> getUserList() async {
     final ref = Collection.users.ref(_db);
-    final query = filterByModified(ref);
+    final query = ref;
     final snapshot = await query.get();
     final users = snapshot.docs.map((s) => User.fromJson(s.id, s.data()));
     return users.toList();
   }
 
+//TODO: get from cache and anything >lastmodified
   Future<List<Hospital>> getHospitals() async {
     var ref = Collection.hospitals.ref(_db);
     final query = filterByModified(ref);
     final snapshot = await query.get();
     var hospitals = snapshot.docs.map((s) => Hospital.fromJson(s.id, s.data()));
     return hospitals.toList();
-  }
-
-  /// Retrieves a single question document
-  Future<Question> getQuestion(String questionId) async {
-    var ref = Collection.questions.ref(_db).doc(questionId);
-    var snapshot = await ref.get();
-    if (snapshot.data()?["type"] == "binary") {
-      return BinaryQuestion.fromJson(snapshot.id, snapshot.data() ?? {});
-    } else {
-      return GroupQuestion.fromJson(snapshot.id, snapshot.data() ?? {});
-    }
   }
 
   Future<void> updateQuestion(String questionId, String newInfo) async {
@@ -219,24 +211,9 @@ class FirestoreService {
         .where("user", isEqualTo: AuthService().user?.uid ?? "")
         .orderBy("dateStarted");
     return ref.snapshots().map((querySnap) {
-      return querySnap.docs.map((doc) => formFromFirebase(doc)).toList();
+      return querySnap.docs.map((doc) => _formFromFirebase(doc)).toList();
     });
   }
-
-  // Stream<List<Form>> streamForms() {
-  //   return AuthService().userStream.switchMap((user) {
-  //     if (user != null) {
-  //       print("user is not null");
-  //       var ref = Collection.forms.ref(_db).where("user", isEqualTo: user.uid);
-  //       return ref.snapshots().map((querySnap) => querySnap.docs
-  //           .map((doc) => Form.fromJson(doc.id, doc.data()))
-  //           .toList());
-  //     } else {
-  //       print("user is null");
-  //       return Stream.fromIterable([]);
-  //     }
-  //   });
-  // }
 
   String createForm(Form form) {
     var ref = Collection.forms.ref(_db).doc();
@@ -282,8 +259,7 @@ class FirestoreService {
       'user': AuthService().user?.uid ?? "",
       'answers': form.answers,
       'dateCompleted': Timestamp.now(),
-      'dateReceived': FieldValue.serverTimestamp(),
-      'lastModified': Timestamp.now()
+      'dateReceived': FieldValue.serverTimestamp()
     };
 
     return ref.set(data, SetOptions(merge: true));

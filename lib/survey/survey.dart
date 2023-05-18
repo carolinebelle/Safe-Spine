@@ -54,53 +54,6 @@ class SurveyScreen extends StatelessWidget {
             title: title,
             user: AuthService().user?.uid ?? "no user");
 
-    // Map<String, int> countSubquestions(Question question) {
-    //   if (question.type == "binary") {
-    //     if (form.answers.containsKey(question.id)) {
-    //       return {"total": 1, "answers": 1};
-    //     } else {
-    //       return {"total": 1, "answers": 0};
-    //     }
-    //   } else {
-    //     GroupQuestion groupQuestion = question as GroupQuestion;
-    //     int total = 0;
-    //     int answers = 0;
-    //     for (var subquestionId in groupQuestion.subquestions) {
-    //       Question? nextQuestion =
-    //           Provider.of<AppState>(context).questions[subquestionId];
-    //       if (nextQuestion != null) {
-    //         var map = countSubquestions(nextQuestion);
-    //         total += map["total"] ?? 0;
-    //         answers += map["answers"] ?? 0;
-    //       }
-    //     }
-    //     return {"total": total, "answers": answers};
-    //   }
-    // }
-
-    // List<Map<String, int>> sectionQuestionCounts() {
-    //   List<Map<String, int>> counts = [];
-    //   int sectionNum = 0;
-    //   while (sectionNum < sections.length) {
-    //     int total = 0;
-    //     int answers = 0;
-    //     Section? section = sections[format.sections[sectionNum]];
-    //     if (section != null) {
-    //       for (var questionId in section.questions) {
-    //         Question? question =
-    //             Provider.of<AppState>(context).questions[questionId];
-    //         if (question != null) {
-    //           var map = countSubquestions(question);
-    //           total += map["total"] ?? 0;
-    //           answers += map["answers"] ?? 0;
-    //         }
-    //       }
-    //     }
-    //     counts.add({"total": total, "answers": answers});
-    //   }
-    //   return counts;
-    // }
-
     SurveyState state = SurveyState(form: form, format: format);
 
     final appState = Provider.of<AppState>(context);

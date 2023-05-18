@@ -7,7 +7,12 @@ import 'package:safespine/services/models.dart' as model;
 
 class AppState with ChangeNotifier {
   static AppState? _instance;
+
+  //history.dart
+  //complete_page.dart
+  //survey.dart
   final FirestoreService service;
+
   final AuthService _auth = AuthService();
 
   static Future<AppState> getInstance() async {
@@ -20,16 +25,27 @@ class AppState with ChangeNotifier {
 
   AppState._(this.service);
 
+  //forms.dart to build widget
+  //form_item.dart to build widget
   List<model.FormType> formats = [];
+
+  //survey.dart to build widget
   Map<String, model.Section> sections = {};
+
+  //question_page.dart to build widget
   Map<String, model.Question> questions = {};
+
+  //form_type_screen.dart to build widget
+  //form_item.dart to build widget
   List<model.Hospital> hospitals = [];
   List<model.Form> userForms = [];
 
+  //forms.dart TODO: potentially unnecessary
   bool isLoading = true;
 
   User? get user => _auth.user;
 
+  //forms.dart postFrameCallback
   Future<void> refreshFromFirebase() async {
     print("Retrieving from firebase to state");
 
@@ -48,6 +64,7 @@ class AppState with ChangeNotifier {
       hospitals = await service.getHospitals();
       print("Retrieved hospitals");
 
+      //TODO: only check relevant forms
       if (_auth.user != null) {
         userForms = await service.getForms(userId: _auth.user?.uid);
         print("Retrieved userforms");
@@ -61,14 +78,7 @@ class AppState with ChangeNotifier {
     }
   }
 
-  Future<void> updateForm(model.Form form) {
-    return service.updateForm(form);
-  }
-
-  Future<void> submitForm(model.Form form) {
-    return service.submitForm(form);
-  }
-
+  //add_hospital.dart button action
   Future<void> addHospital(String hospitalName) async {
     await service.createHospital(hospitalName);
     hospitals = await service.getHospitals();
@@ -76,11 +86,12 @@ class AppState with ChangeNotifier {
     return;
   }
 
-  //modify questions
+  //modify_questions.dart button action
   Future<void> modifyQuestion(String id, String newText) {
     return service.updateQuestion(id, newText);
   }
 
+  //csv.dart button action
   Future<void> csv() async {
     await service.generateSpecificCSV();
     // await service.generateCSV();
