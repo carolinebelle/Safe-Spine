@@ -35,81 +35,100 @@ class SurveyScreen extends StatelessWidget {
 
     final format = args.format;
     final hospital = args.hospital;
-
     final title =
         "${hospital.name}: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}";
 
-    Map<String, Section> sections = Provider.of<AppState>(context).sections;
+    Future<Map<String, models.Section>> retrieveSectionMap() async {
+      return {
+        for (var v in await Provider.of<AppState>(context)
+            .service
+            .getSections(format.id))
+          v.id: v
+      };
+    }
 
-    List<Section> sectionsList = format.sections
-        .map((sectionId) => sections[sectionId] ?? Section(id: sectionId))
-        .toList();
+    return FutureBuilder<Map<String, models.Section>>(
+        future: retrieveSectionMap(),
+        builder: (BuildContext context,
+            AsyncSnapshot<Map<String, models.Section>> snapshot) {
+          if (snapshot.hasData) {
+            Map<String, models.Section> sections = snapshot.data!;
 
-    final models.Form form = args.form ??
-        models.Form(
-            id: const Uuid().v4(),
-            dateStarted: Timestamp.now(),
-            form_type: format.id,
-            hospital: hospital.id,
-            title: title,
-            user: AuthService().user?.uid ?? "no user");
+            List<Section> sectionsList = format.sections
+                .map((sectionId) =>
+                    sections[sectionId] ?? Section(id: sectionId))
+                .toList();
 
-    SurveyState state = SurveyState(form: form, format: format);
+            final models.Form form = args.form ??
+                models.Form(
+                    id: const Uuid().v4(),
+                    dateStarted: Timestamp.now(),
+                    form_type: format.id,
+                    hospital: hospital.id,
+                    title: title,
+                    user: AuthService().user?.uid ?? "no user");
 
-    final appState = Provider.of<AppState>(context);
-    final FirestoreService service = appState.service;
+            SurveyState state = SurveyState(form: form, format: format);
 
-    return WillPopScope(
-      onWillPop: () async => !Navigator.of(context).userGestureInProgress,
-      child: ChangeNotifierProvider<SurveyState>.value(
-        value: state,
-        child: Scaffold(
-          appBar: AppBar(
-            // automaticallyImplyLeading: false,
-            backgroundColor: Colors.deepPurple,
-            title: Text(title),
-            actions: <Widget>[
-              Padding(
-                  padding: const EdgeInsets.only(right: 20.0),
-                  child: GestureDetector(
-                    onTap: () {
-                      service.updateForm(state.form);
-                      Navigator.pop(context);
-                      Navigator.pop(context);
-                    },
-                    child: const Icon(FontAwesomeIcons.xmark),
-                  )),
-            ],
-          ),
-          body: PageView.builder(
-              // physics: const NeverScrollableScrollPhysics(),
-              scrollDirection: Axis.horizontal,
-              controller: state.sectionController,
-              itemCount: state.format.sections.length + 1,
-              onPageChanged: (int idx) {},
-              itemBuilder: (BuildContext context, int idx) {
-                if (idx == state.format.sections.length) {
-                  return CompletePage(sectionIndex: idx);
-                } else {
-                  Section? section = Provider.of<AppState>(context)
-                      .sections[state.format.sections[idx]];
-                  if (section != null) {
-                    return SectionPage(
-                        key: ValueKey(idx),
-                        sectionIndex: idx,
-                        section: section);
-                  } else {
-                    return const Center(
-                        child: Text("Error retrieving section."));
-                  }
-                }
-              }),
-          drawer: SectionsDrawer(
-            title: title,
-            sections: sectionsList,
-          ),
-        ),
-      ),
-    );
+            final appState = Provider.of<AppState>(context);
+            final FirestoreService service = appState.service;
+
+            return WillPopScope(
+              onWillPop: () async =>
+                  !Navigator.of(context).userGestureInProgress,
+              child: ChangeNotifierProvider<SurveyState>.value(
+                value: state,
+                child: Scaffold(
+                  appBar: AppBar(
+                    // automaticallyImplyLeading: false,
+                    backgroundColor: Colors.deepPurple,
+                    title: Text(title),
+                    actions: <Widget>[
+                      Padding(
+                          padding: const EdgeInsets.only(right: 20.0),
+                          child: GestureDetector(
+                            onTap: () {
+                              service.updateForm(state.form);
+                              Navigator.pop(context);
+                              Navigator.pop(context);
+                            },
+                            child: const Icon(FontAwesomeIcons.xmark),
+                          )),
+                    ],
+                  ),
+                  body: PageView.builder(
+                      // physics: const NeverScrollableScrollPhysics(),
+                      scrollDirection: Axis.horizontal,
+                      controller: state.sectionController,
+                      itemCount: state.format.sections.length + 1,
+                      onPageChanged: (int idx) {},
+                      itemBuilder: (BuildContext context, int idx) {
+                        if (idx == state.format.sections.length) {
+                          return CompletePage(sectionIndex: idx);
+                        } else {
+                          Section? section =
+                              sections[state.format.sections[idx]];
+                          if (section != null) {
+                            return SectionPage(
+                                key: ValueKey(idx),
+                                sectionIndex: idx,
+                                section: section);
+                          } else {
+                            return const Center(
+                                child: Text("Error retrieving section."));
+                          }
+                        }
+                      }),
+                  drawer: SectionsDrawer(
+                    title: title,
+                    sections: sectionsList,
+                  ),
+                ),
+              ),
+            );
+          } else {
+            return const CircularProgressIndicator();
+          }
+        });
   }
 }

@@ -189,19 +189,24 @@ class QuestionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Question? question = Provider.of<AppState>(context).questions[questionId];
-
-    if (question == null) {
-      return const Text("Unable to retrieve question.");
-    } else {
-      if (question.type == "binary") {
-        return BinaryQuestionItem(
-            question: question as BinaryQuestion, num: num, depth: depth);
-      } else {
-        return GroupQuestionItem(
-            question: question as GroupQuestion, num: num, depth: depth);
-      }
-    }
+    Future<Question> questionSnapshot =
+        Provider.of<AppState>(context).service.getQuestion(questionId);
+    return FutureBuilder(
+        future: questionSnapshot,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            Question question = snapshot.data!;
+            if (question.type == "binary") {
+              return BinaryQuestionItem(
+                  question: question as BinaryQuestion, num: num, depth: depth);
+            } else {
+              return GroupQuestionItem(
+                  question: question as GroupQuestion, num: num, depth: depth);
+            }
+          } else {
+            return const Text("Unable to retrieve question.");
+          }
+        });
   }
 }
 

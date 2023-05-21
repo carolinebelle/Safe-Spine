@@ -14,16 +14,35 @@ class ModifyQuestions extends StatefulWidget {
 class _ModifyQuestionsState extends State<ModifyQuestions> {
   @override
   Widget build(BuildContext context) {
-    Map<String, Question> questions = Provider.of<AppState>(context).questions;
+    Future<Map<String, Question>> retrieveQuestions() async {
+      return {
+        for (var v
+            in await Provider.of<AppState>(context).service.getQuestions())
+          v.id: v
+      };
+    }
+
+    ;
 
     return Scaffold(
-        appBar: AppBar(title: const Text("Modify Questions")),
-        body: SingleChildScrollView(
-            child: Column(
+      appBar: AppBar(title: const Text("Modify Questions")),
+      body: SingleChildScrollView(
+          child: FutureBuilder(
+        future: retrieveQuestions(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            Map<String, Question> questions = snapshot.data!;
+            return Column(
                 children: questions.entries
                     .map((entry) =>
                         EditQuestion(id: entry.key, question: entry.value))
-                    .toList())));
+                    .toList());
+          } else {
+            return const CircularProgressIndicator();
+          }
+        },
+      )),
+    );
   }
 }
 

@@ -14,26 +14,36 @@ class FormItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (form.dateCompleted == null && form.dateStarted != null) {
-      return ListTile(
-        leading: const Icon(Icons.edit, color: Colors.red),
-        title: Text(form.title),
-        subtitle: Text(
-            "Started: ${DateFormat('yyyy-MM-dd').format(DateTime.fromMillisecondsSinceEpoch(form.dateStarted!.millisecondsSinceEpoch))}"),
-        onTap: () {
-          var formats = Provider.of<AppState>(context, listen: false).formats;
-          var format = formats[
-              formats.indexWhere((element) => element.id == form.form_type)];
-          var hospitals =
-              Provider.of<AppState>(context, listen: false).hospitals;
-          var hospital = hospitals[
-              hospitals.indexWhere((element) => element.id == form.hospital)];
-          Navigator.pushNamed(
-            context,
-            '/survey',
-            arguments: SurveyScreenArguments(format, hospital, form: form),
-          );
-        },
-      );
+      return FutureBuilder(
+          future: Provider.of<AppState>(context).service.getFormTypes(),
+          builder:
+              (BuildContext context, AsyncSnapshot<List<m.FormType>> snapshot) {
+            if (snapshot.hasData) {
+              return ListTile(
+                leading: const Icon(Icons.edit, color: Colors.red),
+                title: Text(form.title),
+                subtitle: Text(
+                    "Started: ${DateFormat('yyyy-MM-dd').format(DateTime.fromMillisecondsSinceEpoch(form.dateStarted!.millisecondsSinceEpoch))}"),
+                onTap: () {
+                  var formats = snapshot.data!;
+                  var format = formats[formats
+                      .indexWhere((element) => element.id == form.form_type)];
+                  var hospitals =
+                      Provider.of<AppState>(context, listen: false).hospitals;
+                  var hospital = hospitals[hospitals
+                      .indexWhere((element) => element.id == form.hospital)];
+                  Navigator.pushNamed(
+                    context,
+                    '/survey',
+                    arguments:
+                        SurveyScreenArguments(format, hospital, form: form),
+                  );
+                },
+              );
+            } else {
+              return const CircularProgressIndicator();
+            }
+          });
     } else if (form.dateReceived == null && form.dateCompleted != null) {
       return ListTile(
         leading: const Icon(Icons.signal_wifi_connected_no_internet_4,

@@ -9,24 +9,26 @@ class QuestionList extends StatelessWidget {
   final m.Section section;
   const QuestionList({Key? key, required this.section}) : super(key: key);
 
+//TODO: query sqflite
   bool checkStatus(BuildContext context, String id, List<String> completed) {
-    m.Question? question = Provider.of<AppState>(context).questions[id];
-    if (question == null) {
-      return false;
-    } else {
-      if (question.type == "binary") {
-        return completed.contains(id);
-      } else {
-        m.GroupQuestion groupQuestion = question as m.GroupQuestion;
-        for (String subquestionId in groupQuestion.subquestions) {
-          bool complete = checkStatus(context, subquestionId, completed);
-          if (!complete) {
-            return false;
-          }
-        }
-        return true;
-      }
-    }
+    return false;
+    // m.Question? question = Provider.of<AppState>(context).questions[id];
+    // if (question == null) {
+    //   return false;
+    // } else {
+    //   if (question.type == "binary") {
+    //     return completed.contains(id);
+    //   } else {
+    //     m.GroupQuestion groupQuestion = question as m.GroupQuestion;
+    //     for (String subquestionId in groupQuestion.subquestions) {
+    //       bool complete = checkStatus(context, subquestionId, completed);
+    //       if (!complete) {
+    //         return false;
+    //       }
+    //     }
+    //     return true;
+    //   }
+    // }
   }
 
   Widget getQuestionTile(BuildContext context, SurveyState state,

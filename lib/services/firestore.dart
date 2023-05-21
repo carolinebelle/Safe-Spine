@@ -5,8 +5,6 @@ import 'package:safespine/services/auth.dart';
 import 'package:safespine/services/models.dart';
 import 'package:csv/csv.dart';
 import 'dart:io';
-// import 'package:to_csv/to_csv.dart' as exportCSV;
-
 import 'package:path_provider/path_provider.dart';
 import 'package:safespine/services/shared_preferences_provider.dart';
 
@@ -115,30 +113,30 @@ class FirestoreService {
     return ref.where("lastModified", isGreaterThan: lastSync);
   }
 
-//TODO: get from cache and anything >lastmodified
-  Future<List<FormType>> getFormTypes() async {
+  Future<List<FormType>> getFormTypes({bool fromCache = true}) async {
     final ref = Collection.formTypes.ref(_db);
-    final query = filterByModified(ref);
-    final snapshot = await query.get();
+    final query = fromCache ? ref : filterByModified(ref);
+    final snapshot =
+        await query.get(GetOptions(source: fromCache ? CACHE : SERVER));
     var formTypes = snapshot.docs.map((s) => FormType.fromJson(s.id, s.data()));
     return formTypes.toList();
   }
 
-//TODO: get from cache and anything >lastmodified
-  Future<List<Section>> getSections(formType) async {
+  Future<List<Section>> getSections(formType, {bool fromCache = true}) async {
     var ref = _db.collection('form_types/$formType/Sections');
-    final query = filterByModified(ref);
-    final snapshot = await query.get();
+    final query = fromCache ? ref : filterByModified(ref);
+    final snapshot =
+        await query.get(GetOptions(source: fromCache ? CACHE : SERVER));
     var sections = snapshot.docs.map((s) => Section.fromJson(s.id, s.data()));
     return sections.toList();
   }
 
-//TODO: get from cache and anything >lastmodified
-  Future<List<Question>> getQuestions() async {
+  Future<List<Question>> getQuestions({bool fromCache = true}) async {
     var ref = Collection.questions.ref(_db);
 
-    final query = filterByModified(ref);
-    final snapshot = await query.get();
+    final query = fromCache ? ref : filterByModified(ref);
+    final snapshot =
+        await query.get(GetOptions(source: fromCache ? CACHE : SERVER));
 
     Iterable<Question> questions = snapshot.docs.map((s) {
       if (s.data()["type"] == "binary") {
@@ -148,6 +146,23 @@ class FirestoreService {
       }
     });
     return questions.toList();
+  }
+
+  Future<Question> getQuestion(id) async {
+    var ref = Collection.questions.ref(_db);
+
+    final query = ref.doc(id);
+    final snapshot = await query.get(GetOptions(source: CACHE));
+
+    if (snapshot.exists) {
+      if (snapshot.data()!["type"] == "binary") {
+        return BinaryQuestion.fromJson(snapshot.id, snapshot.data()!);
+      } else {
+        return GroupQuestion.fromJson(snapshot.id, snapshot.data()!);
+      }
+    }
+
+    throw NullThrownError();
   }
 
   Future<List<Form>> getForms({hospitalId, userId}) async {
@@ -173,11 +188,11 @@ class FirestoreService {
     return users.toList();
   }
 
-//TODO: get from cache and anything >lastmodified
-  Future<List<Hospital>> getHospitals() async {
+  Future<List<Hospital>> getHospitals({bool fromCache = true}) async {
     var ref = Collection.hospitals.ref(_db);
-    final query = filterByModified(ref);
-    final snapshot = await query.get();
+    final query = fromCache ? ref : filterByModified(ref);
+    final snapshot =
+        await query.get(GetOptions(source: fromCache ? CACHE : SERVER));
     var hospitals = snapshot.docs.map((s) => Hospital.fromJson(s.id, s.data()));
     return hospitals.toList();
   }

@@ -25,19 +25,10 @@ class AppState with ChangeNotifier {
 
   AppState._(this.service);
 
-  //forms.dart to build widget
-  //form_item.dart to build widget
-  List<model.FormType> formats = [];
-
-  //survey.dart to build widget
-  Map<String, model.Section> sections = {};
-
-  //question_page.dart to build widget
-  Map<String, model.Question> questions = {};
-
   //form_type_screen.dart to build widget
   //form_item.dart to build widget
   List<model.Hospital> hospitals = [];
+
   List<model.Form> userForms = [];
 
   //forms.dart TODO: potentially unnecessary
@@ -50,18 +41,18 @@ class AppState with ChangeNotifier {
     print("Retrieving from firebase to state");
 
     if (AuthService().user != null) {
-      formats = await service.getFormTypes();
+      List<model.FormType> formats =
+          await service.getFormTypes(fromCache: false);
       print("Retrieved formats");
 
       if (formats.isNotEmpty) {
-        sections = {
-          for (var v in await service.getSections(formats.first.id)) v.id: v
-        };
+        await service.getSections(formats.first.id, fromCache: false);
         print("Retrieved sections");
-        questions = {for (var v in await service.getQuestions()) v.id: v};
+
+        await service.getQuestions(fromCache: false);
         print("Retrieved questions");
       }
-      hospitals = await service.getHospitals();
+      hospitals = await service.getHospitals(fromCache: false);
       print("Retrieved hospitals");
 
       //TODO: only check relevant forms

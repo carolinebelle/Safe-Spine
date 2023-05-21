@@ -4,6 +4,7 @@ import 'package:safespine/app_state.dart';
 import 'package:safespine/forms/form_type_item.dart';
 import 'package:safespine/shared/bottom_nav.dart';
 import 'package:safespine/shared/loading.dart';
+import 'package:safespine/services/models.dart' as model;
 
 class FormsScreen extends StatefulWidget {
   const FormsScreen({super.key});
@@ -64,20 +65,21 @@ class _FormsScreenState extends State<FormsScreen> {
                       },
                       child: const Icon(Icons.book)),
                 ),
-                Padding(
-                    padding: const EdgeInsets.only(right: 20.0),
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/csv',
-                        );
-                      },
-                      child: const Icon(
-                        Icons.document_scanner,
-                        size: 26.0,
-                      ),
-                    )),
+                //CSV Download
+                // Padding(
+                //     padding: const EdgeInsets.only(right: 20.0),
+                //     child: GestureDetector(
+                //       onTap: () {
+                //         Navigator.pushNamed(
+                //           context,
+                //           '/csv',
+                //         );
+                //       },
+                //       child: const Icon(
+                //         Icons.document_scanner,
+                //         size: 26.0,
+                //       ),
+                //     )),
                 if (!Provider.of<bool>(context))
                   Padding(
                     padding: const EdgeInsets.only(right: 20.0),
@@ -91,14 +93,22 @@ class _FormsScreenState extends State<FormsScreen> {
                   ),
               ],
             ),
-            body: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: Provider.of<AppState>(context)
-                  .formats
-                  .map((formType) =>
-                      Flexible(child: FormTypeItem(form: formType)))
-                  .toList(),
-            ),
+            body: FutureBuilder(
+                future: Provider.of<AppState>(context).service.getFormTypes(),
+                builder: (BuildContext context,
+                    AsyncSnapshot<List<model.FormType>> snapshot) {
+                  if (snapshot.hasData) {
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: snapshot.data!
+                          .map((formType) =>
+                              Flexible(child: FormTypeItem(form: formType)))
+                          .toList(),
+                    );
+                  } else {
+                    return const CircularProgressIndicator();
+                  }
+                }),
             bottomNavigationBar: const BottomNavBar(),
           );
   }
