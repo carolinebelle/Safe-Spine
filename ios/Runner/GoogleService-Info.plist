@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>1062871469674-sc61hu0gu5hjs9dssfrqdfff54g3dmhu.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.1062871469674-sc61hu0gu5hjs9dssfrqdfff54g3dmhu</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCVCmx7T0I_PpztEBsV3UGH5wtyDmB6rZc</string>
+	<key>GCM_SENDER_ID</key>
+	<string>1062871469674</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.ortholink.safespine</string>
+	<key>PROJECT_ID</key>
+	<string>safespine-6f2ce</string>
+	<key>STORAGE_BUCKET</key>
+	<string>safespine-6f2ce.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:1062871469674:ios:99a10e1c2aea9234b28413</string>
+</dict>
+</plist>
