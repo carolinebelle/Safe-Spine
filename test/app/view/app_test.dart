@@ -3,7 +3,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:safespine_bloc/app/app.dart';
-import 'package:safespine_bloc/home/home.dart';
+import 'package:safespine_bloc/survey/survey.dart';
 import 'package:safespine_bloc/login/login.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';

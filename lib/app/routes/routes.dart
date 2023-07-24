@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:safespine_bloc/app/app.dart';
-import 'package:safespine_bloc/home/home.dart';
+import 'package:safespine_bloc/survey/survey.dart';
 import 'package:safespine_bloc/login/login.dart';
 
 List<Page<dynamic>> onGenerateAppViewPages(

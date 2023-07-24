@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:safespine_bloc/app/app.dart';
-// import 'package:safespine_bloc/home/home.dart';
+import 'package:safespine_bloc/settings/settings.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -16,13 +16,14 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Home'),
         actions: <Widget>[
-          IconButton(
-            key: const Key('homePage_logout_iconButton'),
-            icon: const Icon(Icons.exit_to_app),
-            onPressed: () {
-              context.read<AppBloc>().add(const AppLogoutRequested());
-            },
-          )
+          _SettingsButton(),
+          // IconButton(
+          //   key: const Key('homePage_logout_iconButton'),
+          //   icon: const Icon(Icons.exit_to_app),
+          //   onPressed: () {
+          //     context.read<AppBloc>().add(const AppLogoutRequested());
+          //   },
+          // )
         ],
       ),
       body: Align(
@@ -38,6 +39,17 @@ class HomePage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SettingsButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      key: const Key('homePage_settings_iconButton'),
+      icon: const Icon(Icons.settings),
+      onPressed: () => Navigator.of(context).push<void>(SettingsPage.route()),
     );
   }
 }

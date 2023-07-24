@@ -50,6 +50,37 @@ class SignUpWithEmailAndPasswordFailure implements Exception {
   final String message;
 }
 
+/// {@template send_password_reset_email_failure}
+/// Thrown during the send password reset email process if a failure occurs.
+/// {@endtemplate}
+class SendPasswordResetEmailFailure implements Exception {
+  /// {@macro send_password_reset_email_failure}
+  const SendPasswordResetEmailFailure([
+    this.message = 'An unknown exception occurred.',
+  ]);
+
+  /// Create an authentication message
+  /// from a firebase authentication exception code.
+  /// https://pub.dev/documentation/firebase_auth/latest/firebase_auth/FirebaseAuth/sendPasswordResetEmail.html
+  factory SendPasswordResetEmailFailure.fromCode(String code) {
+    switch (code) {
+      case 'invalid-email':
+        return const SendPasswordResetEmailFailure(
+          'Email is not valid or badly formatted.',
+        );
+      case 'user-not-found':
+        return const SendPasswordResetEmailFailure(
+          'Email is not found, please create an account.',
+        );
+      default:
+        return const SendPasswordResetEmailFailure();
+    }
+  }
+
+  /// The associated error message.
+  final String message;
+}
+
 /// {@template log_in_with_email_and_password_failure}
 /// Thrown during the login process if a failure occurs.
 /// https://pub.dev/documentation/firebase_auth/latest/firebase_auth/FirebaseAuth/signInWithEmailAndPassword.html
@@ -144,6 +175,33 @@ class LogInWithGoogleFailure implements Exception {
   final String message;
 }
 
+///{@template delete_user_failure}
+///Thrown during the delete user process if a failure occurs.
+///https://pub.dev/documentation/firebase_auth/latest/firebase_auth/FirebaseAuth/deleteUser.html
+///{@endtemplate}
+class DeleteUserFailure implements Exception {
+  ///{@macro delete_user_failure}
+  const DeleteUserFailure([
+    this.message = 'An unknown exception occurred.',
+  ]);
+
+  ///Create an authentication message
+  ///from a firebase authentication exception code.
+  factory DeleteUserFailure.fromCode(String code) {
+    switch (code) {
+      case 'requires-recent-login':
+        return const DeleteUserFailure(
+          'The user must reauthenticate before this operation can be executed.',
+        );
+      default:
+        return const DeleteUserFailure();
+    }
+  }
+
+  ///The associated error message.
+  final String message;
+}
+
 /// Thrown during the logout process if a failure occurs.
 class LogOutFailure implements Exception {}
 
@@ -209,6 +267,18 @@ class AuthenticationRepository {
     }
   }
 
+  /// Sends a password reset email to the provided [email].
+  /// Throws a [SendPasswordResetEmailFailure] if an exception occurs.
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      throw SendPasswordResetEmailFailure.fromCode(e.code);
+    } catch (_) {
+      throw const SendPasswordResetEmailFailure();
+    }
+  }
+
   /// Starts the Sign In with Google Flow.
   ///
   /// Throws a [LogInWithGoogleFailure] if an exception occurs.
@@ -254,6 +324,19 @@ class AuthenticationRepository {
       throw LogInWithEmailAndPasswordFailure.fromCode(e.code);
     } catch (_) {
       throw const LogInWithEmailAndPasswordFailure();
+    }
+  }
+
+  /// Deletes the current user.
+  ///
+  /// Throws a [DeleteUserFailure] if an exception occurs.
+  Future<void> deleteUser() async {
+    try {
+      await _firebaseAuth.currentUser!.delete();
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      throw DeleteUserFailure.fromCode(e.code);
+    } catch (_) {
+      throw const DeleteUserFailure();
     }
   }
 
