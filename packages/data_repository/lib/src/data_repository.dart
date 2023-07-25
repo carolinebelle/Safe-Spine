@@ -18,6 +18,7 @@ abstract class DataRepositoryInterface {
   Future<void> saveForm(Form form);
   Future<void> submitForm(Form form);
   Future<Survey> survey(String surveyID);
+  Future<Section> getSection(String sectionID, {Survey survey});
   Future<void> addSection(Section section, {Survey survey});
   Future<void> deleteSection(Section section, {Survey survey});
   Future<void> modifySection(Section section, {Survey survey});
@@ -235,7 +236,7 @@ class DataRepository implements DataRepositoryInterface {
           .doc(survey.id)
           .collection('Sections')
           .doc(section.id)
-          .set({'questions': section.questions.map((e) => e.id).toList()});
+          .set({'questions': section.questions});
     } catch (e) {
       throw e;
     }
@@ -284,7 +285,7 @@ class DataRepository implements DataRepositoryInterface {
           .doc(survey.id)
           .collection('Sections')
           .doc(section.id)
-          .update({questions: section.questions.map((e) => e.id).toList()});
+          .update(section.json);
     } catch (e) {
       throw e;
     }
@@ -301,7 +302,7 @@ class DataRepository implements DataRepositoryInterface {
           return GroupQuestion(
               id: doc.id,
               info: data['info'],
-              subquestions: data['subquestions']);
+              subquestions: data['subquestions'] as List<String>);
         } else {
           return BinaryQuestion(
               id: doc.id,
@@ -368,31 +369,12 @@ class DataRepository implements DataRepositoryInterface {
   }
 
   @override
-  Future<List<Survey>> surveys() {
-    return _firestore
+  Future<List<Survey>> surveys() async {
+    return await _firestore
         .collection('form_types')
         .get()
         .then((value) => value.docs.map((e) {
-              final data = e.data();
-              List<Section> sections = data['sections'].map((sectionID) async {
-                List<Question> questions = await _firestore
-                    .collection('form_types')
-                    .doc(e.id)
-                    .collection('Sections')
-                    .doc(sectionID)
-                    .get()
-                    .then((doc) => doc.data()?['questions'] ?? [])
-                    .then((questionIDs) => questionIDs
-                        .map((e) async => await question(e))
-                        .toList());
-                return Section(id: sectionID, questions: questions);
-              }).toList();
-
-              return Survey(
-                  id: e.id,
-                  title: data['title'],
-                  numQuestions: data['numQuestions'],
-                  sections: sections);
+              return Survey.fromSnapshot(e);
             }).toList());
   }
 
@@ -452,31 +434,13 @@ class DataRepository implements DataRepositoryInterface {
   }
 
   @override
-  Future<Survey> survey(String surveyID) {
-    return _firestore.collection('form_types').doc(surveyID).get().then((doc) {
-      final data = doc.data();
-      if (data != null) {
-        List<Section> sections = data['sections'].map((sectionID) async {
-          List<Question> questions = await _firestore
-              .collection('form_types')
-              .doc(doc.id)
-              .collection('Sections')
-              .doc(sectionID)
-              .get()
-              .then((doc) => doc.data()?['questions'] ?? [])
-              .then((questionIDs) =>
-                  questionIDs.map((e) async => await question(e)).toList());
-          return Section(id: sectionID, questions: questions);
-        }).toList();
-        return Survey(
-            id: doc.id,
-            title: data['title'],
-            numQuestions: data['numQuestions'],
-            sections: sections);
-      } else {
-        throw Exception("Survey $surveyID not found");
-      }
-    });
+  Future<Survey> survey(String surveyID) async {
+    try {
+      final doc = await _firestore.collection('form_types').doc(surveyID).get();
+      return Survey.fromSnapshot(doc);
+    } catch (e) {
+      throw e;
+    }
   }
 
   @override
@@ -498,5 +462,24 @@ class DataRepository implements DataRepositoryInterface {
   @override
   Future<void> deleteForm(Form form) async {
     return await _firestore.collection('forms').doc(form.id).delete();
+  }
+
+  @override
+  Future<Section> getSection(String sectionID,
+      {Survey survey = Survey.inventory}) async {
+    try {
+      final cloud_firestore.DocumentSnapshot<Map<String, dynamic>> sectionDoc =
+          await _firestore
+              .collection('form_types')
+              .doc(survey.id)
+              .collection('Sections')
+              .doc(sectionID)
+              .get();
+
+      print("RETRIEVED SECTION ${sectionDoc.data()}");
+      return Section.fromSnapshot(sectionDoc);
+    } catch (e) {
+      throw e;
+    }
   }
 }

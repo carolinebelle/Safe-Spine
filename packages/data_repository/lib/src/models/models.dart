@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:equatable/equatable.dart';
 
 /// {@template hospital}
@@ -16,6 +17,15 @@ class Hospital extends Equatable {
 
   @override
   List<Object?> get props => [name, id];
+
+  static Hospital fromSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final Map<String, dynamic>? data = doc.data();
+    if (data != null) {
+      return Hospital(id: doc.id, name: data['name']);
+    } else {
+      throw Exception('Document does not exist');
+    }
+  }
 }
 
 class Survey extends Equatable {
@@ -27,32 +37,83 @@ class Survey extends Equatable {
 
   final String id;
   final int numQuestions;
-  final List<Section> sections;
+  final List<String> sections;
   final String title;
 
   static const inventory = Survey(
       id: 'XmEqxcSeXOPZRw3zPdjH',
       title: 'Safe Spine Survey',
       numQuestions: 207,
-      sections: <Section>[]);
+      sections: []);
 
-  static const empty =
-      Survey(id: '', title: '', numQuestions: 0, sections: <Section>[]);
+  static const empty = Survey(id: '', title: '', numQuestions: 0, sections: []);
 
   bool get isEmpty => this == Survey.empty;
 
   bool get isNotEmpty => this != Survey.empty;
   @override
   List<Object?> get props => [id, numQuestions, sections, title];
+
+  static Survey fromSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final Map<String, dynamic>? data = doc.data();
+    if (data != null) {
+      return Survey(
+          id: doc.id,
+          title: data['title'],
+          numQuestions: data['numQuestions'],
+          sections: data['sections'].map((e) => e.toString()).toList());
+    } else {
+      throw Exception('Document does not exist');
+    }
+  }
+
+  Survey copyWith({
+    String? id,
+    String? title,
+    int? numQuestions,
+    List<String>? sections,
+  }) {
+    return Survey(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      numQuestions: numQuestions ?? this.numQuestions,
+      sections: sections ?? this.sections,
+    );
+  }
 }
 
 class Section extends Equatable {
   const Section({required this.id, required this.questions});
   final String id;
-  final List<Question> questions;
+  final List<String> questions;
 
   @override
   List<Object?> get props => [id, questions];
+
+  static Section fromSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final Map<String, dynamic>? data = doc.data();
+    print("converting snapshot to Section");
+    if (data != null) {
+      print(data['questions']);
+      return Section(
+          id: doc.id,
+          questions: data['questions'].map((e) => e.toString()).toList());
+    } else {
+      throw Exception('Document does not exist');
+    }
+  }
+
+  Map<String, dynamic> get json => {'questions': questions};
+
+  Section copyWith({
+    String? id,
+    List<String>? questions,
+  }) {
+    return Section(
+      id: id ?? this.id,
+      questions: questions ?? this.questions,
+    );
+  }
 }
 
 class Question extends Equatable {
@@ -65,6 +126,15 @@ class Question extends Equatable {
   List<Object?> get props => [id, info, type];
 
   Map<String, dynamic> get json => {'info': info, 'type': type};
+
+  static Question fromSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final Map<String, dynamic>? data = doc.data();
+    if (data != null) {
+      return Question(id: doc.id, info: data['info'], type: data['type']);
+    } else {
+      throw Exception('Document does not exist');
+    }
+  }
 }
 
 class GroupQuestion extends Question {
@@ -82,6 +152,17 @@ class GroupQuestion extends Question {
   @override
   Map<String, dynamic> get json =>
       {'info': info, 'type': 'group', 'subquestions': subquestions};
+
+  static GroupQuestion fromSnapshot(
+      DocumentSnapshot<Map<String, dynamic>> doc) {
+    final Map<String, dynamic>? data = doc.data();
+    if (data != null) {
+      return GroupQuestion(
+          id: doc.id, info: data['info'], subquestions: data['subquestions']);
+    } else {
+      throw Exception('Document does not exist');
+    }
+  }
 }
 
 class BinaryQuestion extends Question {
@@ -110,6 +191,21 @@ class BinaryQuestion extends Question {
         'level': level,
         'variable': variable
       };
+
+  static BinaryQuestion fromSnapshot(
+      DocumentSnapshot<Map<String, dynamic>> doc) {
+    final Map<String, dynamic>? data = doc.data();
+    if (data != null) {
+      return BinaryQuestion(
+          id: doc.id,
+          info: data['info'],
+          category: data['category'],
+          level: data['level'],
+          variable: data['variable']);
+    } else {
+      throw Exception('Document does not exist');
+    }
+  }
 }
 
 class Form extends Equatable {
@@ -164,6 +260,38 @@ class Form extends Equatable {
       userID: userID ?? this.userID,
     );
   }
+
+  static Form fromSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final Map<String, dynamic>? data = doc.data();
+    if (data != null) {
+      return Form(
+          id: doc.id,
+          title: data['title'],
+          answers: data['answers'],
+          surveyID: data['form_type'],
+          hospitalID: data['hospital'],
+          userID: data['user'],
+          dateCompleted: (data['date_completed'] as Timestamp).toDate(),
+          dateReceived: (data['date_received'] as Timestamp).toDate(),
+          dateStarted: (data['date_started'] as Timestamp).toDate());
+    } else {
+      throw Exception('Document does not exist');
+    }
+  }
+
+  Map<String, dynamic> get json => {
+        'title': title,
+        'answers': answers,
+        'form_type': surveyID,
+        'hospital': hospitalID,
+        'user': userID,
+        'date_completed':
+            dateCompleted != null ? Timestamp.fromDate(dateCompleted!) : null,
+        'date_received':
+            dateReceived != null ? Timestamp.fromDate(dateReceived!) : null,
+        'date_started':
+            dateStarted != null ? Timestamp.fromDate(dateStarted!) : null,
+      };
 
   @override
   List<Object?> get props => [
