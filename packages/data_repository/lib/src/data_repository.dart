@@ -18,9 +18,9 @@ abstract class DataRepositoryInterface {
   Future<void> saveForm(Form form);
   Future<void> submitForm(Form form);
   Future<Survey> survey(String surveyID);
-  Future<void> addSection(Section section);
-  Future<void> deleteSection(Section section);
-  Future<void> modifySection(Section section);
+  Future<void> addSection(Section section, {Survey survey});
+  Future<void> deleteSection(Section section, {Survey survey});
+  Future<void> modifySection(Section section, {Survey survey});
   Future<void> deleteQuestion(Question question);
   Future<void> modifyQuestion(Question question);
   Future<void> addQuestion(Question question, GroupQuestion? groupQuestion);
@@ -160,7 +160,7 @@ class DataRepository implements DataRepositoryInterface {
     try {
       final result = await _firestore.collection('users').doc(userID).get();
       if (result.exists) {
-        return result.data()?['admin'] ?? false;
+        return result.data()?['isAdmin'] ?? false;
       } else {
         return false;
       }
@@ -204,99 +204,299 @@ class DataRepository implements DataRepositoryInterface {
     ;
   }
 
+/**
+ * GroupQuestion? should have order subquestions with the new question already 
+ * added to the list
+ */
   @override
-  Future<void> addQuestion(Question question, GroupQuestion? groupQuestion) {
-    // TODO: implement addQuestion
-    throw UnimplementedError();
+  Future<void> addQuestion(
+      Question question, GroupQuestion? groupQuestion) async {
+    try {
+      Map<String, dynamic> data = question.json;
+      await _firestore.collection('questions').doc(question.id).set(data);
+
+      if (groupQuestion != null) {
+        await _firestore
+            .collection('questions')
+            .doc(groupQuestion.id)
+            .set(groupQuestion.json);
+      }
+    } catch (e) {
+      throw e;
+    }
   }
 
   @override
-  Future<void> addSection(Section section) {
-    // TODO: implement addSection
-    throw UnimplementedError();
+  Future<void> addSection(Section section,
+      {Survey survey = Survey.inventory}) async {
+    try {
+      await _firestore
+          .collection('form_types')
+          .doc(survey.id)
+          .collection('Sections')
+          .doc(section.id)
+          .set({'questions': section.questions.map((e) => e.id).toList()});
+    } catch (e) {
+      throw e;
+    }
   }
 
   @override
-  Future<void> deleteQuestion(Question question) {
-    // TODO: implement deleteQuestion
-    throw UnimplementedError();
+  Future<void> deleteQuestion(Question question) async {
+    try {
+      await _firestore.collection('questions').doc(question.id).delete();
+    } catch (e) {
+      throw e;
+    }
   }
 
   @override
-  Future<void> deleteSection(Section section) {
-    // TODO: implement deleteSection
-    throw UnimplementedError();
+  Future<void> deleteSection(Section section,
+      {Survey survey = Survey.inventory}) async {
+    try {
+      return await _firestore
+          .collection('form_types')
+          .doc(survey.id)
+          .collection('Sections')
+          .doc(section.id)
+          .delete();
+    } catch (e) {
+      throw e;
+    }
   }
 
   @override
-  Future<void> modifyQuestion(Question question) {
-    // TODO: implement modifyQuestion
-    throw UnimplementedError();
+  Future<void> modifyQuestion(Question question) async {
+    try {
+      Map<String, dynamic> data = question.json;
+      await _firestore.collection('questions').doc(question.id).update(data);
+    } catch (e) {
+      throw e;
+    }
   }
 
   @override
-  Future<void> modifySection(Section section) {
-    // TODO: implement modifySection
-    throw UnimplementedError();
+  Future<void> modifySection(Section section,
+      {Survey survey = Survey.inventory}) async {
+    try {
+      return await _firestore
+          .collection('form_types')
+          .doc(survey.id)
+          .collection('Sections')
+          .doc(section.id)
+          .update({questions: section.questions.map((e) => e.id).toList()});
+    } catch (e) {
+      throw e;
+    }
   }
 
   @override
-  Future<Question> question(String questionID) {
-    // TODO: implement question
-    throw UnimplementedError();
+  Future<Question> question(String questionID) async {
+    try {
+      final doc =
+          await _firestore.collection('questions').doc(questionID).get();
+      final data = doc.data();
+      if (data != null) {
+        if (data['type'] == 'group') {
+          return GroupQuestion(
+              id: doc.id,
+              info: data['info'],
+              subquestions: data['subquestions']);
+        } else {
+          return BinaryQuestion(
+              id: doc.id,
+              info: data['info'],
+              category: data['category'],
+              level: data['level'],
+              variable: data['variable']);
+        }
+      } else {
+        throw Exception("Question $questionID not found");
+      }
+    } catch (e) {
+      throw e;
+    }
   }
 
   @override
-  Future<List<Question>> questions() {
-    // TODO: implement questions
-    throw UnimplementedError();
+  Future<List<Question>> questions() async {
+    return await _firestore
+        .collection('questions')
+        .get()
+        .then((value) => value.docs.map((e) {
+              final data = e.data();
+              if (data['type'] == 'group') {
+                return GroupQuestion(
+                    id: e.id,
+                    info: data['info'],
+                    subquestions: data['subquestions']);
+              } else {
+                return BinaryQuestion(
+                    id: e.id,
+                    info: data['info'],
+                    category: data['category'],
+                    level: data['level'],
+                    variable: data['variable']);
+              }
+            }).toList());
   }
 
   @override
-  Future<void> saveForm(Form form) {
-    // TODO: implement saveForm
-    throw UnimplementedError();
+  Future<void> saveForm(Form form) async {
+    try {
+      await _firestore
+          .collection('forms')
+          .doc(form.id)
+          .update({'answers': form.answers});
+    } catch (e) {
+      throw e;
+    }
   }
 
   @override
   Future<void> submitForm(Form form) {
-    // TODO: implement submitForm
-    throw UnimplementedError();
+    DateTime dateCompleted = DateTime.now();
+    try {
+      return _firestore.collection('forms').doc(form.id).update({
+        'dateCompleted': cloud_firestore.Timestamp.fromDate(dateCompleted),
+        'dateReceived': cloud_firestore.FieldValue.serverTimestamp(),
+        'answers': form.answers
+      });
+    } catch (e) {
+      throw e;
+    }
   }
 
   @override
   Future<List<Survey>> surveys() {
-    // TODO: implement surveys
-    throw UnimplementedError();
+    return _firestore
+        .collection('form_types')
+        .get()
+        .then((value) => value.docs.map((e) {
+              final data = e.data();
+              List<Section> sections = data['sections'].map((sectionID) async {
+                List<Question> questions = await _firestore
+                    .collection('form_types')
+                    .doc(e.id)
+                    .collection('Sections')
+                    .doc(sectionID)
+                    .get()
+                    .then((doc) => doc.data()?['questions'] ?? [])
+                    .then((questionIDs) => questionIDs
+                        .map((e) async => await question(e))
+                        .toList());
+                return Section(id: sectionID, questions: questions);
+              }).toList();
+
+              return Survey(
+                  id: e.id,
+                  title: data['title'],
+                  numQuestions: data['numQuestions'],
+                  sections: sections);
+            }).toList());
   }
 
   @override
-  Future<Form> createForm(String userID, Hospital hospital, Survey survey) {
-    // TODO: implement createForm
-    throw UnimplementedError();
+  Future<Form> createForm(
+      String userID, Hospital hospital, Survey survey) async {
+    DateTime now = DateTime.now();
+    try {
+      final title = '${hospital.name}: ${now.year}-${now.month}-${now.day}';
+      final data = {
+        'user': userID,
+        'hospital': hospital.id,
+        'form_type': survey.id,
+        'dateStarted': cloud_firestore.Timestamp.fromDate(now),
+        'title': title,
+        'answers': {}
+      };
+      final doc = await _firestore.collection('forms').add(data);
+      return Form(
+          id: doc.id,
+          userID: userID,
+          hospitalID: hospital.id,
+          surveyID: survey.id,
+          title: title,
+          dateStarted: now,
+          answers: {});
+    } catch (e) {
+      throw e;
+    }
   }
 
   @override
-  Future<Form> retrieveForm(String formID) {
-    // TODO: implement retrieveForm
-    throw UnimplementedError();
+  Future<Form> retrieveForm(String formID) async {
+    try {
+      final doc = await _firestore.collection("forms").doc(formID).get();
+      final data = doc.data();
+      if (data != null) {
+        return Form(
+            answers: data["answers"],
+            id: formID,
+            title: data["title"],
+            dateStarted:
+                (data["dateStarted"] as cloud_firestore.Timestamp).toDate(),
+            dateReceived:
+                (data["dateReceived"] as cloud_firestore.Timestamp).toDate(),
+            dateCompleted:
+                (data["dateCompleted"] as cloud_firestore.Timestamp).toDate(),
+            surveyID: data["form_type"],
+            hospitalID: data["hospital"],
+            userID: data["user"]);
+      } else {
+        throw Exception("Form $formID not found");
+      }
+    } catch (e) {
+      throw e;
+    }
   }
 
   @override
   Future<Survey> survey(String surveyID) {
-    // TODO: implement survey
-    throw UnimplementedError();
+    return _firestore.collection('form_types').doc(surveyID).get().then((doc) {
+      final data = doc.data();
+      if (data != null) {
+        List<Section> sections = data['sections'].map((sectionID) async {
+          List<Question> questions = await _firestore
+              .collection('form_types')
+              .doc(doc.id)
+              .collection('Sections')
+              .doc(sectionID)
+              .get()
+              .then((doc) => doc.data()?['questions'] ?? [])
+              .then((questionIDs) =>
+                  questionIDs.map((e) async => await question(e)).toList());
+          return Section(id: sectionID, questions: questions);
+        }).toList();
+        return Survey(
+            id: doc.id,
+            title: data['title'],
+            numQuestions: data['numQuestions'],
+            sections: sections);
+      } else {
+        throw Exception("Survey $surveyID not found");
+      }
+    });
   }
 
   @override
-  Future<Hospital> hospital(String hospitalID) {
-    // TODO: implement hospital
-    throw UnimplementedError();
+  Future<Hospital> hospital(String hospitalID) async {
+    return await _firestore
+        .collection("hospitals")
+        .doc(hospitalID)
+        .get()
+        .then((doc) {
+      final data = doc.data();
+      if (data != null) {
+        return Hospital(id: doc.id, name: data["name"]);
+      } else {
+        throw Exception("Hospital $hospitalID not found");
+      }
+    });
   }
 
   @override
-  Future<void> deleteForm(Form form) {
-    // TODO: implement deleteForm
-    throw UnimplementedError();
+  Future<void> deleteForm(Form form) async {
+    return await _firestore.collection('forms').doc(form.id).delete();
   }
 }

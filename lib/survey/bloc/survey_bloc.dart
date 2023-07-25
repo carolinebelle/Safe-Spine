@@ -37,6 +37,7 @@ class SurveyBloc extends Bloc<SurveyEvent, SurveyState> {
       List<Form> forms =
           await _dataRepository.forms(_authenticationRepository.currentUser.id);
       List<Hospital> hospitals = await _dataRepository.hospitals();
+      List<Question> questions = await _dataRepository.questions();
       emit(SurveyState.loadingDataSuccess(surveys, forms, hospitals));
     } catch (e) {
       emit(SurveyState.loadingDataFailure(e.toString()));

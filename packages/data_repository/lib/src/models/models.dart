@@ -30,6 +30,12 @@ class Survey extends Equatable {
   final List<Section> sections;
   final String title;
 
+  static const inventory = Survey(
+      id: 'XmEqxcSeXOPZRw3zPdjH',
+      title: 'Safe Spine Survey',
+      numQuestions: 207,
+      sections: <Section>[]);
+
   static const empty =
       Survey(id: '', title: '', numQuestions: 0, sections: <Section>[]);
 
@@ -43,25 +49,28 @@ class Survey extends Equatable {
 class Section extends Equatable {
   const Section({required this.id, required this.questions});
   final String id;
-  final List<String> questions;
+  final List<Question> questions;
 
   @override
   List<Object?> get props => [id, questions];
 }
 
 class Question extends Equatable {
-  const Question({required this.id, required this.info});
+  const Question({required this.id, required this.info, required this.type});
   final String id;
   final String info;
+  final String type;
 
   @override
-  List<Object?> get props => [id, info];
+  List<Object?> get props => [id, info, type];
+
+  Map<String, dynamic> get json => {'info': info, 'type': type};
 }
 
 class GroupQuestion extends Question {
   const GroupQuestion(
       {required this.id, required this.info, required this.subquestions})
-      : super(id: id, info: info);
+      : super(id: id, info: info, type: 'group');
 
   final List<String> subquestions;
   final String id;
@@ -69,6 +78,10 @@ class GroupQuestion extends Question {
 
   @override
   List<Object?> get props => [id, info, subquestions];
+
+  @override
+  Map<String, dynamic> get json =>
+      {'info': info, 'type': 'group', 'subquestions': subquestions};
 }
 
 class BinaryQuestion extends Question {
@@ -78,7 +91,7 @@ class BinaryQuestion extends Question {
       required this.category,
       required this.level,
       required this.variable})
-      : super(id: id, info: info);
+      : super(id: id, info: info, type: 'binary');
 
   final String category;
   final int level;
@@ -88,6 +101,15 @@ class BinaryQuestion extends Question {
 
   @override
   List<Object?> get props => [id, info, category, level, variable];
+
+  @override
+  Map<String, dynamic> get json => {
+        'info': info,
+        'type': 'binary',
+        'category': category,
+        'level': level,
+        'variable': variable
+      };
 }
 
 class Form extends Equatable {
