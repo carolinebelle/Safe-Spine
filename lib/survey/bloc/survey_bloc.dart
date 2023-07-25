@@ -32,14 +32,21 @@ class SurveyBloc extends Bloc<SurveyEvent, SurveyState> {
   void _onSurveyViewStarted(
       SurveyEvent event, Emitter<SurveyState> emit) async {
     emit(const SurveyState.loadingData());
+    String last = "none";
     try {
       List<Survey> surveys = await _dataRepository.surveys();
+      last = "surveys";
       List<Form> forms =
           await _dataRepository.forms(_authenticationRepository.currentUser.id);
+      last = "forms";
       List<Hospital> hospitals = await _dataRepository.hospitals();
+      last = "hospitals";
       List<Question> questions = await _dataRepository.questions();
-      emit(SurveyState.loadingDataSuccess(surveys, forms, hospitals));
+      last = "questions";
+      emit(
+          state.copyWith(surveys: surveys, forms: forms, hospitals: hospitals));
     } catch (e) {
+      print("last checkpoing $last");
       emit(SurveyState.loadingDataFailure(e.toString()));
     }
   }
@@ -51,19 +58,26 @@ class SurveyBloc extends Bloc<SurveyEvent, SurveyState> {
 
   Future<void> _onHospitalSelected(
       HospitalSelected event, Emitter<SurveyState> emit) async {
-    emit(state.copyWith(callStatus: CallStatus.loading, form: Form.empty));
+    emit(state.copyWith(
+        status: SurveyStatus.unselected,
+        callStatus: CallStatus.loading,
+        form: Form.empty));
     try {
       Form newForm = await _dataRepository.createForm(
           _authenticationRepository.currentUser.id,
           event.hospital,
           state.survey);
+
       emit(state.copyWith(
           status: SurveyStatus.selected,
           callStatus: CallStatus.success,
           form: newForm));
     } catch (e) {
       emit(state.copyWith(
-          callStatus: CallStatus.failure, message: e.toString()));
+          status: SurveyStatus.unselected,
+          callStatus: CallStatus.failure,
+          form: Form.empty,
+          message: e.toString()));
     }
   }
 

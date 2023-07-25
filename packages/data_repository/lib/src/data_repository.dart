@@ -3,6 +3,22 @@ import 'dart:async';
 import 'package:data_repository/data_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' as cloud_firestore;
 
+class HospitalsFailure implements Exception {
+  const HospitalsFailure([this.message = 'An unknown exception occurred.']);
+
+  factory HospitalsFailure.fromCode(String code) {
+    switch (code) {
+      case 'permission-denied':
+        return const HospitalsFailure('Permission denied');
+      default:
+        return const HospitalsFailure();
+    }
+  }
+
+  ///The associated error message.
+  final String message;
+}
+
 abstract class DataRepositoryInterface {
   Future<List<Hospital>> hospitals();
   Future<List<Form>> forms(String userID);
@@ -138,23 +154,7 @@ class DataRepository implements DataRepositoryInterface {
             .collection('forms')
             .where('user', isEqualTo: userID)
             .get();
-    final List<Form> forms = snapshot.docs.map((doc) {
-      final Map<String, dynamic> data = doc.data();
-      return Form(
-          id: doc.id,
-          title: data['title'],
-          dateStarted:
-              (data['dateStarted'] as cloud_firestore.Timestamp).toDate(),
-          dateReceived:
-              (data['dateReceived'] as cloud_firestore.Timestamp).toDate(),
-          dateCompleted:
-              (data['dateCompleted'] as cloud_firestore.Timestamp).toDate(),
-          surveyID: data['form_type'],
-          hospitalID: data['hospital'],
-          userID: data['user'],
-          answers: data['answers'] as Map<String, String>);
-    }).toList();
-    return forms;
+    return snapshot.docs.map((doc) => Form.fromSnapshot(doc)).toList();
   }
 
   Future<bool> isAdmin(String userID) async {
@@ -327,17 +327,9 @@ class DataRepository implements DataRepositoryInterface {
         .then((value) => value.docs.map((e) {
               final data = e.data();
               if (data['type'] == 'group') {
-                return GroupQuestion(
-                    id: e.id,
-                    info: data['info'],
-                    subquestions: data['subquestions']);
+                return GroupQuestion.fromSnapshot(e);
               } else {
-                return BinaryQuestion(
-                    id: e.id,
-                    info: data['info'],
-                    category: data['category'],
-                    level: data['level'],
-                    variable: data['variable']);
+                return BinaryQuestion.fromSnapshot(e);
               }
             }).toList());
   }
@@ -381,26 +373,10 @@ class DataRepository implements DataRepositoryInterface {
   @override
   Future<Form> createForm(
       String userID, Hospital hospital, Survey survey) async {
-    DateTime now = DateTime.now();
     try {
-      final title = '${hospital.name}: ${now.year}-${now.month}-${now.day}';
-      final data = {
-        'user': userID,
-        'hospital': hospital.id,
-        'form_type': survey.id,
-        'dateStarted': cloud_firestore.Timestamp.fromDate(now),
-        'title': title,
-        'answers': {}
-      };
-      final doc = await _firestore.collection('forms').add(data);
-      return Form(
-          id: doc.id,
-          userID: userID,
-          hospitalID: hospital.id,
-          surveyID: survey.id,
-          title: title,
-          dateStarted: now,
-          answers: {});
+      Form newForm = Form.newForm(userID, hospital, survey);
+      final docRef = await _firestore.collection('forms').add(newForm.json);
+      return newForm.copyWith(id: docRef.id);
     } catch (e) {
       throw e;
     }

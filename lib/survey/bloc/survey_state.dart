@@ -67,6 +67,5 @@ final class SurveyState extends Equatable {
   final List<Survey> surveys;
 
   @override
-  List<Object> get props =>
-      [status, callStatus, survey, form, message, forms, surveys];
+  List<Object> get props => [status, survey, form, message, forms, surveys];
 }

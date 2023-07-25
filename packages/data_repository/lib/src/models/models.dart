@@ -61,7 +61,7 @@ class Survey extends Equatable {
           id: doc.id,
           title: data['title'],
           numQuestions: data['numQuestions'],
-          sections: data['sections'].map((e) => e.toString()).toList());
+          sections: data['sections'].map<String>((e) => e.toString()).toList());
     } else {
       throw Exception('Document does not exist');
     }
@@ -158,7 +158,10 @@ class GroupQuestion extends Question {
     final Map<String, dynamic>? data = doc.data();
     if (data != null) {
       return GroupQuestion(
-          id: doc.id, info: data['info'], subquestions: data['subquestions']);
+          id: doc.id,
+          info: data['info'],
+          subquestions:
+              data['subquestions'].map<String>((e) => e.toString()).toList());
     } else {
       throw Exception('Document does not exist');
     }
@@ -261,19 +264,44 @@ class Form extends Equatable {
     );
   }
 
+  static Form newForm(String userID, Hospital hospital, Survey survey) {
+    DateTime now = DateTime.now();
+    final title = '${hospital.name}: ${now.year}-${now.month}-${now.day}';
+
+    return Form(
+        id: '',
+        title: title,
+        surveyID: survey.id,
+        hospitalID: hospital.id,
+        userID: userID,
+        answers: {},
+        dateStarted: now);
+  }
+
   static Form fromSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {
     final Map<String, dynamic>? data = doc.data();
     if (data != null) {
+      Map<dynamic, dynamic> original = data['answers'];
+      Map<String, String> answers = {};
+      for (var item in data['answers'].keys)
+        answers[item.toString()] = original[item].toString();
+
       return Form(
           id: doc.id,
           title: data['title'],
-          answers: data['answers'],
+          answers: answers,
           surveyID: data['form_type'],
           hospitalID: data['hospital'],
           userID: data['user'],
-          dateCompleted: (data['date_completed'] as Timestamp).toDate(),
-          dateReceived: (data['date_received'] as Timestamp).toDate(),
-          dateStarted: (data['date_started'] as Timestamp).toDate());
+          dateCompleted: data['dateCompleted'] != null
+              ? (data['dateCompleted'] as Timestamp).toDate()
+              : null,
+          dateReceived: data['dateReceived'] != null
+              ? (data['dateReceived'] as Timestamp).toDate()
+              : null,
+          dateStarted: data['dateStarted'] != null
+              ? (data['dateStarted'] as Timestamp).toDate()
+              : null);
     } else {
       throw Exception('Document does not exist');
     }
@@ -285,11 +313,11 @@ class Form extends Equatable {
         'form_type': surveyID,
         'hospital': hospitalID,
         'user': userID,
-        'date_completed':
+        'dateCompleted':
             dateCompleted != null ? Timestamp.fromDate(dateCompleted!) : null,
-        'date_received':
+        'dateReceived':
             dateReceived != null ? Timestamp.fromDate(dateReceived!) : null,
-        'date_started':
+        'dateStarted':
             dateStarted != null ? Timestamp.fromDate(dateStarted!) : null,
       };
 
