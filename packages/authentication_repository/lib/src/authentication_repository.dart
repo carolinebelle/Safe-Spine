@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:authentication_repository/authentication_repository.dart';
-import 'package:cache/cache.dart';
+
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
@@ -211,14 +211,11 @@ class LogOutFailure implements Exception {}
 class AuthenticationRepository {
   /// {@macro authentication_repository}
   AuthenticationRepository({
-    CacheClient? cache,
     firebase_auth.FirebaseAuth? firebaseAuth,
     GoogleSignIn? googleSignIn,
-  })  : _cache = cache ?? CacheClient(),
-        _firebaseAuth = firebaseAuth ?? firebase_auth.FirebaseAuth.instance,
+  })  : _firebaseAuth = firebaseAuth ?? firebase_auth.FirebaseAuth.instance,
         _googleSignIn = googleSignIn ?? GoogleSignIn.standard();
 
-  final CacheClient _cache;
   final firebase_auth.FirebaseAuth _firebaseAuth;
   final GoogleSignIn _googleSignIn;
 
@@ -228,11 +225,6 @@ class AuthenticationRepository {
   @visibleForTesting
   bool isWeb = kIsWeb;
 
-  /// User cache key.
-  /// Should only be used for testing purposes.
-  @visibleForTesting
-  static const userCacheKey = '__user_cache_key__';
-
   /// Stream of [User] which will emit the current user when
   /// the authentication state changes.
   ///
@@ -240,15 +232,19 @@ class AuthenticationRepository {
   Stream<User> get user {
     return _firebaseAuth.authStateChanges().map((firebaseUser) {
       final user = firebaseUser == null ? User.empty : firebaseUser.toUser;
-      _cache.write(key: userCacheKey, value: user);
       return user;
     });
   }
 
-  /// Returns the current cached user.
-  /// Defaults to [User.empty] if there is no cached user.
+  /// Returns the current user.
+  /// Defaults to [User.empty] if there is no current user.
   User get currentUser {
-    return _cache.read<User>(key: userCacheKey) ?? User.empty;
+    final firebase_auth.User? _firebaseUser = _firebaseAuth.currentUser;
+    if (_firebaseUser != null) {
+      return _firebaseUser.toUser;
+    } else {
+      return User.empty;
+    }
   }
 
   /// Creates a new user with the provided [email] and [password].

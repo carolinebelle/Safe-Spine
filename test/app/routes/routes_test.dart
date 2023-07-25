@@ -13,7 +13,7 @@ void main() {
           isA<MaterialPage<void>>().having(
             (p) => p.child,
             'child',
-            isA<HomePage>(),
+            isA<SurveyView>(),
           )
         ],
       );

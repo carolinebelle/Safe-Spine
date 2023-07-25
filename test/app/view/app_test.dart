@@ -77,7 +77,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.byType(HomePage), findsOneWidget);
+      expect(find.byType(SurveyView), findsOneWidget);
     });
   });
 }

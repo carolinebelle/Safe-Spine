@@ -9,6 +9,8 @@ environment:
 dependencies:
   authentication_repository:
     path: packages/authentication_repository
+  data_repository:
+    path: packages/data_repository
   bloc: ^8.1.0
   equatable: ^2.0.3
   firebase_core: ^2.1.0

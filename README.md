@@ -32,3 +32,5 @@ Testable: Easily test every aspect of an application so that we can iterate with
 
 ### Overall, Bloc attempts to make state changes predictable by regulating when a state change can occur and enforcing a single way to change state throughout an entire application.
 
+![block architecture diagram](https://bloclibrary.dev/assets/bloc_architecture_full.png)
+
