@@ -16,16 +16,25 @@ class SurveyView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => SurveyBloc(
+      create: (_) => SurveyBloc(
           dataRepository: context.read<DataRepository>(),
           authenticationRepository: context.read<AuthenticationRepository>())
         ..add(const SurveyViewStarted()),
-      child: MaterialApp(
-        theme: theme,
-        home: FlowBuilder<SurveyStatus>(
-          state: context.select((SurveyBloc bloc) => bloc.state.status),
-          onGeneratePages: onGenerateSurveyViewPages,
-        ),
+      child: const SurveyPages(),
+    );
+  }
+}
+
+class SurveyPages extends StatelessWidget {
+  const SurveyPages({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: theme,
+      home: FlowBuilder<SurveyStatus>(
+        state: context.select((SurveyBloc bloc) => bloc.state.status),
+        onGeneratePages: onGenerateSurveyViewPages,
       ),
     );
   }
