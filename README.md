@@ -1,4 +1,4 @@
-# Safe-Spine
+# Safe-Spine by OrthopaedicLink
 **Privacy Policy**
 
 Orthopaedic Link built the Safe Spine app as a Free app. This SERVICE is provided by Orthopaedic Link at no cost and is intended for use as is.
@@ -21,7 +21,11 @@ Link to the privacy policy of third-party service providers used by the app
 *   [Google Analytics for Firebase](https://firebase.google.com/policies/analytics)
 *   [Expo](https://expo.io/privacy)
 
-To request account deletion or user data deletion, please contact us at info@orthopaediclink.org.
+**Request Data Deletion**
+
+To request account deletion or user data deletion, please contact us at info@orthopaediclink.org and provide the email associated with your account. Please allow 5-10 business days for our team to process your request.
+
+All of your personally identifiable, including email, first and last name, will be deleted from our servers. Unidentifiable data that you have submitted via the app may be retained but will only be connected with a unique identifier that will no longer be associated with any of your personal information.
 
 **Log Data**
 
